@@ -15,6 +15,53 @@ const DEFAULT_DATA = {
   ]
 };
 
+// ==========================================
+// NUEVAS FUNCIONES DE PREFERENCIAS (Agregadas)
+// ==========================================
+function updatePreferences() {
+  const fontFamily = document.getElementById('prefFontFamily')?.value || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif';
+  const fontSize = document.getElementById('prefFontSize')?.value || '16';
+  const textColor = document.getElementById('prefTextColor')?.value || '#222222';
+
+  document.documentElement.style.setProperty('--app-font-family', fontFamily);
+  document.documentElement.style.setProperty('--app-font-size', fontSize + 'px');
+  document.documentElement.style.setProperty('--app-text-color', textColor);
+
+  const display = document.getElementById('prefFontSizeDisplay');
+  if (display) display.textContent = fontSize + 'px';
+
+  localStorage.setItem('proyecto_id_prefs', JSON.stringify({ fontFamily, fontSize, textColor }));
+}
+
+function loadPreferences() {
+  const storedPrefs = localStorage.getItem('proyecto_id_prefs');
+  if (storedPrefs) {
+    try {
+      const prefs = JSON.parse(storedPrefs);
+      
+      document.documentElement.style.setProperty('--app-font-family', prefs.fontFamily);
+      document.documentElement.style.setProperty('--app-font-size', prefs.fontSize + 'px');
+      document.documentElement.style.setProperty('--app-text-color', prefs.textColor);
+      
+      if(document.getElementById('prefFontFamily')) document.getElementById('prefFontFamily').value = prefs.fontFamily;
+      if(document.getElementById('prefFontSize')) document.getElementById('prefFontSize').value = prefs.fontSize;
+      if(document.getElementById('prefTextColor')) document.getElementById('prefTextColor').value = prefs.textColor;
+      if(document.getElementById('prefFontSizeDisplay')) document.getElementById('prefFontSizeDisplay').textContent = prefs.fontSize + 'px';
+    } catch (e) {
+      console.error("Error cargando preferencias de apariencia", e);
+    }
+  }
+}
+
+function resetPreferences() {
+  if(document.getElementById('prefFontFamily')) document.getElementById('prefFontFamily').value = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif';
+  if(document.getElementById('prefFontSize')) document.getElementById('prefFontSize').value = '16';
+  if(document.getElementById('prefTextColor')) document.getElementById('prefTextColor').value = '#222222';
+  
+  updatePreferences();
+}
+// ==========================================
+
 function cloneDefaultData() {
   return JSON.parse(JSON.stringify(DEFAULT_DATA));
 }
@@ -418,6 +465,9 @@ async function deleteCurrentTab() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // === INICIA PREFERENCIAS VISUALES AL CARGAR ===
+  loadPreferences();
+  
   document.getElementById("authModeHint").textContent = AUTH_MODE === "supabase" ? "Autenticación gestionada por Supabase." : "Modo demostración: cualquier correo válido y una contraseña de 8 caracteres.";
   document.getElementById("authBtn").addEventListener("click", toggleAuth);
   document.getElementById("authForm").addEventListener("submit", submitAuth);
@@ -435,6 +485,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("editorBlocks").addEventListener("change", event => { if (event.target.dataset.imageInput) attachImageFile(Number(event.target.dataset.imageInput), event.target.files[0]); if (event.target.dataset.videoInput) attachVideoFile(Number(event.target.dataset.videoInput), event.target.files[0]); });
   document.getElementById("editorBlocks").addEventListener("dragover", event => { if (event.target.closest("[data-drop-index]")) event.preventDefault(); });
   document.getElementById("editorBlocks").addEventListener("drop", event => { const zone = event.target.closest("[data-drop-index]"); if (!zone) return; event.preventDefault(); const index = Number(zone.dataset.dropIndex); const file = event.dataTransfer.files[0]; if (editorBlocks[index].type === "video") attachVideoFile(index, file); else attachImageFile(index, file); });
+  
   renderView();
   restoreSupabaseSession();
   loadTabsFromSupabase().then(loadEntriesFromSupabase);
